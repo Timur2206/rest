@@ -1,17 +1,23 @@
 package ru.itmentor.spring.boot_security.demo.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 import ru.itmentor.spring.boot_security.demo.Service.UserService;
+import ru.itmentor.spring.boot_security.demo.exception.UserIncorrectData;
+import ru.itmentor.spring.boot_security.demo.exception.UserNotFoundException;
 import ru.itmentor.spring.boot_security.demo.model.User;
 
 import java.util.List;
 
-@Controller
+@RestController
 @RequestMapping("/admin")
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminController {
     @Autowired
     private UserService userService;
@@ -19,38 +25,36 @@ public class AdminController {
     public AdminController(UserService userService) {
         this.userService = userService;
     }
+
     @GetMapping("/users")
-    public String listUsers(Model model) {
-        List<User> users = userService.findAll();
-        model.addAttribute("users", users);
-        return "/list";
+    public List<User> getAllUsers(){
+        List<User> allUsers = userService.findAll();
+        return allUsers;
     }
-    @GetMapping("/add")
-    public String showAddForm(Model model) {
-        model.addAttribute("user", new User());
-        return "/add";
-    }
-    @PostMapping("/add")
-    public String addUser(@ModelAttribute("user") User user) {
-        userService.save(user);
-        return "redirect:/admin/users";
-    }
-    @GetMapping("/edit/{id}")
-    public String showEditForm(@PathVariable("id") Long id, Model model) {
+    @GetMapping("/users/{id}")
+    public User getUser(@PathVariable long id){
         User user = userService.findById(id);
-        model.addAttribute("user", user);
-        return "/edit";
+        if (user == null) {
+            throw new UserNotFoundException("User not found with id " + id);
+        }
+        return user;
     }
-    @PostMapping("/edit/{id}")
-    public String editUser(@PathVariable("id") Long id, @ModelAttribute("user") User user) {
-        user.setId(id);
-        userService.update(user);
-        return "redirect:/admin/users";
+    @PostMapping("/users")
+    @ResponseBody
+    public User addNewUser (@RequestBody User user){
+        return userService.save(user);
     }
-    @GetMapping("/delete/{id}")
-    public String deleteUser(@PathVariable("id") Long id) {
-        userService.delete(id);
-        return "redirect:/admin/users";
+    @PutMapping("/users")
+    public User updateUser(@RequestBody User user){
+       return userService.update(user);
+    }
+    @DeleteMapping("/users/{id}")
+    public String deleteUser(@PathVariable Long id) {
+        User user=userService.delete(id);
+        if (user == null) {
+            throw new UserNotFoundException("User not found with id " + id);
+        }
+        return "Users with ID=" + id + " was deleted";
     }
 
 }

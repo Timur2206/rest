@@ -5,11 +5,11 @@ import ru.itmentor.spring.boot_security.demo.model.User;
 import java.util.List;
 
 public interface UserService {
-    void save(User user);
+    User save(User user);
 
-    void update(User user);
+    User update(User user);
 
-    void delete(Long id);
+    User delete(Long id);
 
     User findById(Long id);
     List<User> findAll();

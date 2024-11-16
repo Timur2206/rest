@@ -8,11 +8,12 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import ru.itmentor.spring.boot_security.demo.Service.UserService;
+import ru.itmentor.spring.boot_security.demo.exception.UserNotFoundException;
 import ru.itmentor.spring.boot_security.demo.model.User;
 
 import java.util.List;
 
-@Controller
+@RestController
 @RequestMapping("/user")
 public class UserController {
     private UserService userService;
@@ -23,9 +24,11 @@ public class UserController {
     }
 
     @GetMapping("/profile")
-    public String viewProfile(@AuthenticationPrincipal UserDetails userDetails, Model model) {
-        User currentUser = userService.findByUsername(userDetails.getUsername());
-        model.addAttribute("user", currentUser);
-        return "profile";
+    public User getCurrentUser(@AuthenticationPrincipal UserDetails userDetails){
+        User user = userService.findByUsername(userDetails.getUsername());
+        if (user == null) {
+            throw new UserNotFoundException("User not found with name " + userDetails.getUsername());
+        }
+        return user;
     }
 }
